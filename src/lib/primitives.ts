@@ -3,7 +3,7 @@
  */
 export const common = {
   bool: 'boolean',
-  byte: 'Int8Array',
+  byte: 'number',
   char: 'string',
   float32: 'number',
   float64: 'number',

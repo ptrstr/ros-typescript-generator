@@ -11,6 +11,13 @@ import { primitives1, primitives2 } from './primitives';
 
 const SUPPORTED_ROS_VERSIONS = [1, 2];
 
+const binaryArrayTypes: Record<string, string> = {
+  uint8: 'Uint8Array',
+  byte: 'Uint8Array',
+  char: 'Uint8Array',
+  int8: 'Int8Array',
+};
+
 const rosNameToTypeName = (
   rosName: string,
   prefix = '',
@@ -235,18 +242,21 @@ ${enumEntriesFromFields(candidates_without_prefix)}
       const tsTypes = defTypes
         .filter((defType) => isOfNoneEmptyType(defType))
         .map((param) => {
-          const paramType: string =
-            param.type in primitives
-              ? primitives[param.type as keyof typeof primitives]
-              : useNamespaces
-              ? param.type.split('/')[0] === pkgName
-                ? pascalCase(param.type.split('/')[1])
-                : param.type.split('/').map(pascalCase).join('.')
-              : rosNameToTypeName(
-                  param.type,
-                  (param as any)['typeAdjusted'] === true ? '' : typePrefix
-                );
-          const arrayMarker = param.isArray ? '[]' : '';
+          const isBinaryArray =
+            param.isArray && binaryArrayTypes[param.type] !== undefined;
+          const paramType: string = isBinaryArray
+            ? binaryArrayTypes[param.type]
+            : param.type in primitives
+            ? primitives[param.type as keyof typeof primitives]
+            : useNamespaces
+            ? param.type.split('/')[0] === pkgName
+              ? pascalCase(param.type.split('/')[1])
+              : param.type.split('/').map(pascalCase).join('.')
+            : rosNameToTypeName(
+                param.type,
+                (param as any)['typeAdjusted'] === true ? '' : typePrefix
+              );
+          const arrayMarker = param.isArray && !isBinaryArray ? '[]' : '';
           return `  ${param.name}: ${paramType.replace(
             '.',
             `.${typePrefix}`
